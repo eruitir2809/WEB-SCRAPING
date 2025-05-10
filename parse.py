@@ -1,5 +1,6 @@
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
+from concurrent.futures import ThreadPoolExecutor
 
 template = (
     "You are tasked with extracting specific information from the following text content: {dom_content}. "
@@ -10,20 +11,28 @@ template = (
     "4. **Direct Data Only:** Your output should contain only the data that is explicitly requested, with no other text."
 )
 
-model = OllamaLLM(model="llama3")
+model = OllamaLLM(model="mistral")
+prompt = ChatPromptTemplate.from_template(template)
+chain = prompt | model
 
+def parse_chunk(chunk, parse_description):
+    return chain.invoke({
+        "dom_content": chunk,
+        "parse_description": parse_description,
+    })
 
-def parse_with_ollama(dom_chunks, parse_description):
-    prompt = ChatPromptTemplate.from_template(template)
-    chain = prompt | model
+import multiprocessing
 
-    parsed_results = []
+def parse_with_ollama(dom_chunks, parse_description, max_workers=None):
+    if max_workers is None:
+        max_workers = min(32, multiprocessing.cpu_count() * 2)  # Escalable
 
-    for i, chunk in enumerate(dom_chunks, start=1):
-        response = chain.invoke(
-            {"dom_content": chunk, "parse_description": parse_description}
-        )
-        print(f"Parsed batch: {i} of {len(dom_chunks)}")
-        parsed_results.append(response)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(parse_chunk, chunk, parse_description)
+            for chunk in dom_chunks
+        ]
+        parsed_results = [f.result() for f in futures]
 
-    return "\n".join(parsed_results)
+    return "\n".join(r for r in parsed_results if r.strip())  # Elimina vacíos
+

@@ -6,3 +6,6 @@ beautifulsoup4
 lxml 
 html5lib
 python-dotenv
+PyPDF2
+openpyxl
+docx2txt
