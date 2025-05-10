@@ -1,10 +1,10 @@
 import streamlit as st
 from PIL import Image
-from documentos import cargar_documentos
-from excel import cargar_excel
-from web_scraper import web_scraper
+from utils.documentos import cargar_documentos
+from utils.excel import cargar_excel
+from scraping.web_scraper import web_scraper
 
-img = Image.open('logo.png')
+img = Image.open('assets/logo.png')
 st.set_page_config(page_title='Proyecto TFG', page_icon=img)
 
 def main():

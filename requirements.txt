@@ -9,3 +9,4 @@ python-dotenv
 PyPDF2
 openpyxl
 docx2txt
+xlsxwriter

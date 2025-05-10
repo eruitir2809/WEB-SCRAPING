@@ -3,13 +3,14 @@ from langchain_core.prompts import ChatPromptTemplate
 from concurrent.futures import ThreadPoolExecutor
 
 template = (
-    "You are tasked with extracting specific information from the following text content: {dom_content}. "
-    "Please follow these instructions carefully: \n\n"
-    "1. **Extract Information:** Only extract the information that directly matches the provided description: {parse_description}. "
-    "2. **No Extra Content:** Do not include any additional text, comments, or explanations in your response. "
-    "3. **Empty Response:** If no information matches the description, return an empty string ('')."
-    "4. **Direct Data Only:** Your output should contain only the data that is explicitly requested, with no other text."
+    "Tu tarea es extraer información específica del siguiente contenido de texto: {dom_content}. "
+    "Sigue cuidadosamente estas instrucciones:\n\n"
+    "1. **Extraer Información:** Extrae únicamente la información que coincida directamente con la siguiente descripción: {parse_description}. "
+    "2. **Sin Contenido Adicional:** No incluyas ningún texto adicional, comentarios ni explicaciones en tu respuesta. "
+    "3. **Respuesta Vacía:** Si no hay información que coincida con la descripción, devuelve una cadena vacía (''). "
+    "4. **Solo Datos Solicitados:** Tu salida debe contener únicamente los datos explícitamente solicitados, sin ningún otro texto."
 )
+
 
 model = OllamaLLM(model="mistral")
 prompt = ChatPromptTemplate.from_template(template)

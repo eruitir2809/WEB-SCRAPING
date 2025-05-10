@@ -1,12 +1,12 @@
 import streamlit as st
 from PIL import Image
-from scrape import (
+from scraping.scrape import (
     scrape_website,
     split_dom_content,
     clean_body_content,
     extract_body_content,
 )
-from parse import parse_with_ollama
+from model.parse import parse_with_ollama
 import pandas as pd
 
 def web_scraper():
