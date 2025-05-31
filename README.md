@@ -19,7 +19,7 @@ Este proyecto consiste en la realización de un scraper web desarrollado en Pyth
 
 - **Python** (100%)
 - Librerías principales:
-  - `requests`
+  - `streamlit`
   - `BeautifulSoup`
   - `pandas`
   - `lxml`
@@ -57,11 +57,16 @@ WEB-SCRAPING/
 │
 ├── main.py
 ├── requirements.txt
-├── modules/
-│   └── # Módulos auxiliares para scraping, limpieza, exportación, etc.
+├── model/
+│   └── # Módulos auxiliares para parsear, etc.
 ├── output/
 │   └── # Archivos generados con los datos extraídos
+├── scraping/
+│   └── # Funciones adicionales para scrapear
+├── utils/
+│   └── # Funciones adicionales del proyecto
 └── README.md
+└── requirements.txt
 ```
 
 ## Licencia
