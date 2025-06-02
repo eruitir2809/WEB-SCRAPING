@@ -1,18 +1,23 @@
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from concurrent.futures import ThreadPoolExecutor
+import re
+import multiprocessing
+
 
 template = (
-    "Tu tarea es extraer información específica del siguiente contenido de texto: {dom_content}. "
-    "Sigue cuidadosamente estas instrucciones:\n\n"
-    "1. **Extraer Información:** Extrae únicamente la información que coincida directamente con la siguiente descripción: {parse_description}. "
-    "2. **Sin Contenido Adicional:** No incluyas ningún texto adicional, comentarios ni explicaciones en tu respuesta. "
-    "3. **Respuesta Vacía:** Si no hay información que coincida con la descripción, devuelve una cadena vacía (''). "
-    "4. **Solo Datos Solicitados:** Tu salida debe contener únicamente los datos explícitamente solicitados, sin ningún otro texto."
+    "Tu tarea es responder específicamente a la siguiente pregunta: {parse_description}, "
+    "basándote únicamente en el siguiente contenido de texto:\n\n"
+    "{dom_content}\n\n"
+    "Sigue cuidadosamente estas instrucciones:\n"
+    "1. **Extraer Información:** Responde únicamente la información que coincida directamente con la descripción.\n"
+    "2. **SIN CONTENIDO ADICIONAL:** No incluyas ningún texto adicional, comentarios ni explicaciones en tu respuesta, no incluyas nada que se encuentre entre <think> y </think>."
+    "3. Prohibido el razonamiento: No incluyas pensamientos, razonamientos ni explicaciones internas, aunque creas que ayudan a justificar la respuesta."
+    "4. SI NO HAY COINCIDENCIAS: Responde únicamente con 'NO HAY INFORMACIÓN RELEVANTE'."
+
 )
 
-
-model = OllamaLLM(model="mistral")
+model = OllamaLLM(model="DeepSeek-R1:14b")
 prompt = ChatPromptTemplate.from_template(template)
 chain = prompt | model
 
@@ -21,8 +26,6 @@ def parse_chunk(chunk, parse_description):
         "dom_content": chunk,
         "parse_description": parse_description,
     })
-
-import multiprocessing
 
 def parse_with_ollama(dom_chunks, parse_description, max_workers=None):
     if max_workers is None:
@@ -37,3 +40,5 @@ def parse_with_ollama(dom_chunks, parse_description, max_workers=None):
 
     return "\n".join(r for r in parsed_results if r.strip())  # Elimina vacíos
 
+def eliminar_pensamientos(texto):
+    return re.sub(r"<think>.*?</think>", "", texto, flags=re.DOTALL).strip()

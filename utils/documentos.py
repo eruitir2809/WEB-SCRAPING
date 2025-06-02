@@ -2,7 +2,7 @@ import streamlit as st
 import time
 from PyPDF2 import PdfReader
 import docx2txt
-from model.parse import parse_with_ollama
+from model.parse import parse_with_ollama, eliminar_pensamientos
 
 def cargar_documentos():
     st.subheader("Cargar y Leer Documentos")
@@ -45,7 +45,6 @@ def cargar_documentos():
             return
 
         if texto:
-            st.session_state.excel_content = texto
             st.subheader("Contenido Extraído (Editable)")
             texto_editado = st.text_area("Texto", value=texto, height=300, key="editor")
 
@@ -58,8 +57,10 @@ def cargar_documentos():
                     file_name=nuevo_nombre,
                     mime="text/plain"
                 )
+            
+            st.session_state.doc_content = texto_editado
 
-        if "excel_content" in st.session_state:
+        if "doc_content" in st.session_state:
             st.subheader("Extraer Información con Modelo")
             parse_description = st.text_area("¿Qué información deseas extraer?")
 
@@ -68,9 +69,10 @@ def cargar_documentos():
                     st.info("Procesando texto con el modelo...")
 
                     try:
-                        resultado = parse_with_ollama([st.session_state.excel_content], parse_description)
+                        resultado = parse_with_ollama([st.session_state.doc_content], parse_description)
+                        st.info
                         st.subheader("Resultado del Modelo")
-                        st.write(resultado)
+                        st.write(eliminar_pensamientos(resultado))
 
                     except Exception as e:
                         st.error(f"Error al ejecutar el modelo: {e}")

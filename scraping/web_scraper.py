@@ -10,7 +10,6 @@ from model.parse import parse_with_ollama
 import pandas as pd
 
 def web_scraper():
-    javascript = st.checkbox("La pagina usa javascript para cargar datos?")
     paginas_web = st.selectbox(
         'Elige de que pagina deseas extraer el contenido',
         ['Otro', 'Wallapop', 'Amazon', 'Ikea', 'Vinted']

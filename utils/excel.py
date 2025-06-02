@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 import io
-from model.parse import parse_with_ollama
+from model.parse import parse_with_ollama, eliminar_pensamientos
 from scraping.scrape import split_dom_content
 
 def cargar_excel():
@@ -25,7 +25,6 @@ def cargar_excel():
             st.error(f"Error al leer el archivo: {e}")
             return
 
-        st.session_state.excel_content = df
         st.subheader("Editar Datos")
         df_editado = st.data_editor(df, num_rows="dynamic")
 
@@ -54,6 +53,9 @@ def cargar_excel():
                     file_name=nuevo_nombre,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+                
+        st.session_state.excel_content = df_editado
+
 
     if "excel_content" in st.session_state:
         st.subheader("Extraer Información con Modelo")
@@ -65,12 +67,10 @@ def cargar_excel():
 
                 try:
                     dom_chunks = split_dom_content(st.session_state.excel_content)
-                    st.write("Chunks creados:")
-                    st.write(dom_chunks)
 
                     result = parse_with_ollama(dom_chunks, parse_description)
                     st.subheader("Resultado del Modelo")
-                    st.write(result)
+                    st.write(eliminar_pensamientos(result))
 
                 except Exception as e:
                     st.error(f"Error al ejecutar el modelo: {e}")
