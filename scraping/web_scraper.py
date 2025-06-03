@@ -2,7 +2,7 @@ import streamlit as st
 from PIL import Image
 from scraping.scrapeAmazon import (
     create_driver,
-    get_amazon_product_info,
+    get_product_info,
     get_search_results,
     save_image,
     save_to_excel
@@ -13,12 +13,12 @@ from datetime import datetime
 
 # Función principal de la app
 def web_scraper():
-    paginas_web = st.selectbox(
+    pagina_web = st.selectbox(
         'Elige de qué página deseas extraer el contenido',
         ['Amazon', 'Wallapop', 'Amazon', 'Ikea', 'Vinted']
     )
 
-    if paginas_web == 'Otro':
+    if pagina_web == 'Otro':
         """
         # Scraping general de otras páginas
         url = st.text_input("Introduce la URL de un sitio web:")
@@ -50,20 +50,20 @@ def web_scraper():
                     # st.image("https://picsum.photos/800")"""
     else:
         # -------------------- STREAMLIT APP --------------------
-        st.title(f"{paginas_web} Producto Scraper")
+        st.title(f"{pagina_web} Producto Scraper")
 
-        search_query = st.text_input(f"Introduce tu búsqueda de {paginas_web}:")
+        search_query = st.text_input(f"Introduce tu búsqueda de {pagina_web}:")
 
         if search_query:
             st.write(f"Resultados para: {search_query}")
             driver = create_driver()
-            product_urls = get_search_results(driver, search_query)
+            product_urls = get_search_results(pagina_web.lower(), driver, search_query)
 
             if product_urls:
                 all_data = []
                 for url in product_urls[:30]:
                     try:
-                        title, image_url, price, availability = get_amazon_product_info(driver, url)
+                        title, image_url, price, availability = get_product_info(driver, url)
 
                         if title:
                             data = {

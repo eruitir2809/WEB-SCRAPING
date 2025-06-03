@@ -27,7 +27,7 @@ def create_driver():
     return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
 # -------------------- GET PRODUCT INFO --------------------
-def get_amazon_product_info(driver, url):
+def get_product_info(driver, url):
     driver.get(url)
     wait = WebDriverWait(driver, 10)
 
@@ -64,9 +64,19 @@ def get_amazon_product_info(driver, url):
     return title, image_url, price, availability
 
 # -------------------- GET SEARCH RESULTS --------------------
-def get_search_results(driver, query):
-    search_url = f"https://www.amazon.es/s?k={query}"
-    driver.get(search_url)
+def get_search_results(pagina_web, driver, query):
+    urls = {
+        "amazon": f"https://www.amazon.es/s?k={query}",
+        "ikea": f"https://www.ikea.com/es/es/search/?q={query}",
+        "vinted": f"https://www.vinted.es/catalog?search_text={query}",
+        "wallapop": f"https://es.wallapop.com/app/search?keywords={query}",
+    }
+
+    if pagina_web in urls:
+        driver.get(urls[pagina_web])
+    else:
+        raise ValueError(f"No se reconoce la página web: {pagina_web}")
+    
     wait = WebDriverWait(driver, 10)
 
     try:
