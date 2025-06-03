@@ -3,7 +3,6 @@ import pandas as pd
 import time
 import io
 from model.parse import parse_with_ollama, eliminar_pensamientos
-from scraping.scrape import split_dom_content
 
 def cargar_excel():
     st.subheader("Cargar archivo CSV o Excel")
@@ -66,11 +65,11 @@ def cargar_excel():
                 st.info("Dividiendo contenido en bloques para el modelo...")
 
                 try:
-                    dom_chunks = split_dom_content(st.session_state.excel_content)
+                    #dom_chunks = split_dom_content(st.session_state.excel_content)
 
-                    result = parse_with_ollama(dom_chunks, parse_description)
+                    #result = parse_with_ollama(dom_chunks, parse_description)
                     st.subheader("Resultado del Modelo")
-                    st.write(eliminar_pensamientos(result))
+                    #st.write(eliminar_pensamientos(result))
 
                 except Exception as e:
                     st.error(f"Error al ejecutar el modelo: {e}")

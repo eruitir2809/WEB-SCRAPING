@@ -1,43 +1,99 @@
 import streamlit as st
 from PIL import Image
-from scraping.scrape import (
-    scrape_website,
-    split_dom_content,
-    clean_body_content,
-    extract_body_content,
+from scraping.scrapeAmazon import (
+    create_driver,
+    get_amazon_product_info,
+    get_search_results,
+    save_image,
+    save_to_excel
 )
 from model.parse import parse_with_ollama
 import pandas as pd
+from datetime import datetime
 
+# Función principal de la app
 def web_scraper():
     paginas_web = st.selectbox(
-        'Elige de que pagina deseas extraer el contenido',
-        ['Otro', 'Wallapop', 'Amazon', 'Ikea', 'Vinted']
-        )
-    url = st.text_input("Enter a Website URL: ")
+        'Elige de qué página deseas extraer el contenido',
+        ['Amazon', 'Wallapop', 'Amazon', 'Ikea', 'Vinted']
+    )
 
-    if st.button("Scrape Site"):
-        st.write("Scraping the website")
-        result = scrape_website(url)  # Scrapea el HTML de la URL
-        
-        body_content = extract_body_content(result)  # Extrae el contenido dentro de `<body>`
-        cleaned_content = clean_body_content(body_content)  # Limpia scripts y estilos
-    
-        st.session_state.dom_content = cleaned_content  # Guarda el contenido en sesión
-    
-        with st.expander("View DOM Content"):
-            st.text_area("DOM Content", cleaned_content, height=300)  # Muestra contenido procesado
+    if paginas_web == 'Otro':
+        """
+        # Scraping general de otras páginas
+        url = st.text_input("Introduce la URL de un sitio web:")
 
-    if "dom_content" in st.session_state:
-        parse_description = st.text_area("Descrive what you want to parse?")  # Instrucciones del usuario
-        if st.button("Parse Content"):
-            if parse_description:
-                st.write("Parsing the content")
-            
-                dom_chunks = split_dom_content(st.session_state.dom_content)  # Divide en bloques
-                result = parse_with_ollama(dom_chunks, parse_description)  # Procesa con modelo AI
-                st.write(result)  # Muestra el resultado final
-            
-                    #img = Image.open("imagen.png")
-                    #st.image(img, use_column_width=True)
-                    #st.image("https://picsum.photos/800")
+        if st.button("Scrapear sitio"):
+            st.write("Extrayendo información del sitio web...")
+            result = scrape_website(url)
+
+            body_content = extract_body_content(result)
+            cleaned_content = clean_body_content(body_content)
+
+            st.session_state.dom_content = cleaned_content
+
+            with st.expander("Ver contenido del DOM"):
+                st.text_area("DOM Content", cleaned_content, height=300)
+
+        if "dom_content" in st.session_state:
+            parse_description = st.text_area("¿Qué deseas extraer del contenido?")
+            if st.button("Procesar contenido"):
+                if parse_description:
+                    st.write("Procesando el contenido con IA...")
+                    dom_chunks = split_dom_content(st.session_state.dom_content)
+                    result = parse_with_ollama(dom_chunks, parse_description)
+                    st.write(result)
+
+                    # Opcional: mostrar una imagen decorativa
+                    # img = Image.open("imagen.png")
+                    # st.image(img, use_column_width=True)
+                    # st.image("https://picsum.photos/800")"""
+    else:
+        # -------------------- STREAMLIT APP --------------------
+        st.title(f"{paginas_web} Producto Scraper")
+
+        search_query = st.text_input(f"Introduce tu búsqueda de {paginas_web}:")
+
+        if search_query:
+            st.write(f"Resultados para: {search_query}")
+            driver = create_driver()
+            product_urls = get_search_results(driver, search_query)
+
+            if product_urls:
+                all_data = []
+                for url in product_urls[:30]:
+                    try:
+                        title, image_url, price, availability = get_amazon_product_info(driver, url)
+
+                        if title:
+                            data = {
+                                'Fecha': datetime.now().strftime('%Y-%m-%d'),
+                                'Titulo': title,
+                                'Precio': price,
+                                'Disponibilidad': availability,
+                                'URL Imagen': image_url,
+                                'URL Producto': url
+                            }
+                            all_data.append(data)
+
+                            if image_url:
+                                save_image(image_url, title)
+                    except Exception as e:
+                        st.warning(f"Error al procesar {url}: {e}")
+
+                driver.quit()
+
+                if all_data:
+                    df = pd.DataFrame(all_data)
+                    st.write('### Información de los productos')
+                    st.dataframe(df.style.set_properties(**{'text-align': 'left'}).set_table_styles(
+                        [{'selector': 'th', 'props': [('text-align', 'left')]}]
+                    ))
+
+                    file_name = save_to_excel(all_data)
+                    st.success(f"Datos guardados en {file_name}")
+                else:
+                    st.error("No se encontraron productos válidos.")
+            else:
+                st.error("No se encontraron productos para tu búsqueda.")
+
