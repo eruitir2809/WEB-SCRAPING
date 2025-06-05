@@ -5,7 +5,8 @@ from scraping.scrapeAmazon import (
     get_product_info,
     get_search_results,
     save_image,
-    save_to_excel
+    save_to_excel,
+    ProductInfo
 )
 from model.parse import parse_with_ollama
 import pandas as pd
@@ -63,7 +64,9 @@ def web_scraper():
                 all_data = []
                 for url in product_urls[:30]:
                     try:
-                        title, image_url, price, availability = get_product_info(driver, url)
+                        info = get_product_info(driver, url, pagina_web.lower())
+                        if isinstance(info, ProductInfo):
+                            title, image_url, price, availability = info.title, info.image_url, info.price, info.availability
 
                         if title:
                             data = {
@@ -90,7 +93,7 @@ def web_scraper():
                         [{'selector': 'th', 'props': [('text-align', 'left')]}]
                     ))
 
-                    file_name = save_to_excel(all_data)
+                    file_name = save_to_excel(all_data, pagina_web.lower())
                     st.success(f"Datos guardados en {file_name}")
                 else:
                     st.error("No se encontraron productos válidos.")
