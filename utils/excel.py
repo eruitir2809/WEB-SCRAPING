@@ -65,11 +65,10 @@ def cargar_excel():
                 st.info("Dividiendo contenido en bloques para el modelo...")
 
                 try:
-                    #dom_chunks = split_dom_content(st.session_state.excel_content)
-
-                    #result = parse_with_ollama(dom_chunks, parse_description)
+                    
+                    result = parse_with_ollama([st.session_state.excel_content], parse_description)
                     st.subheader("Resultado del Modelo")
-                    #st.write(eliminar_pensamientos(result))
+                    st.write(eliminar_pensamientos(result))
 
                 except Exception as e:
                     st.error(f"Error al ejecutar el modelo: {e}")
