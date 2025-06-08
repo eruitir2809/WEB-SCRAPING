@@ -29,7 +29,7 @@ def parse_chunk(chunk, parse_description):
 
 def parse_with_ollama(dom_chunks, parse_description, max_workers=None):
     if max_workers is None:
-        max_workers = min(32, multiprocessing.cpu_count() * 2)  # Escalable
+        max_workers = min(32, multiprocessing.cpu_count() * 4)  # Escalable
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [

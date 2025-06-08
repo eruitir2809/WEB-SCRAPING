@@ -1,14 +1,19 @@
 import streamlit as st
 from PIL import Image
 from scraping.scrapeAmazon import (
+    scrape_website,
     create_driver,
+    clean_body_content,
+    split_dom_content,
+    extract_body_content,
     get_product_info,
     get_search_results,
     save_image,
     save_to_excel,
+
     ProductInfo
 )
-from model.parse import parse_with_ollama
+from model.parse import parse_with_ollama, eliminar_pensamientos
 import pandas as pd
 from datetime import datetime
 
@@ -16,16 +21,14 @@ from datetime import datetime
 def web_scraper():
     pagina_web = st.selectbox(
         'Elige de qué página deseas extraer el contenido',
-        ['Amazon', 'Wallapop', 'Amazon', 'Ikea', 'Vinted']
+        ['Otro', 'Wallapop', 'Amazon', 'Ikea', 'Marca']
     )
 
     if pagina_web == 'Otro':
-        """
-        # Scraping general de otras páginas
         url = st.text_input("Introduce la URL de un sitio web:")
 
         if st.button("Scrapear sitio"):
-            st.write("Extrayendo información del sitio web...")
+            st.write("Extrayendo información del sitio web con Selenium...")
             result = scrape_website(url)
 
             body_content = extract_body_content(result)
@@ -43,12 +46,59 @@ def web_scraper():
                     st.write("Procesando el contenido con IA...")
                     dom_chunks = split_dom_content(st.session_state.dom_content)
                     result = parse_with_ollama(dom_chunks, parse_description)
-                    st.write(result)
+                    st.subheader("Resultado del Modelo")
+                    st.write(eliminar_pensamientos(result))
+                    
+    elif pagina_web == 'Marca':
+        # -------------------- STREAMLIT APP --------------------
+        st.title(f"Consultar resultado de Marca")
 
-                    # Opcional: mostrar una imagen decorativa
-                    # img = Image.open("imagen.png")
-                    # st.image(img, use_column_width=True)
-                    # st.image("https://picsum.photos/800")"""
+        search_query = st.text_input(f"Introduce tu la fecha que quieras consultar de {pagina_web}, en este formato Día-Mes-Año:")
+
+        if search_query:
+            st.write(f"Resultados para: {search_query}")
+            driver = create_driver()
+            product_urls = get_search_results(pagina_web.lower(), driver, search_query)
+
+            if product_urls:
+                all_data = []
+                for url in product_urls[:15]:
+                    try:
+                        info = get_product_info(driver, url, pagina_web.lower())
+                                
+                        if isinstance(info, ProductInfo):
+                            title, image_url, price = (info.title, info.image_url, info.price)
+
+                        if title:
+                            data = {
+                                'Fecha': datetime.now().strftime('%Y-%m-%d'),
+                                'Titulo': title,
+                                'Precio': price,
+                                'URL Imagen': image_url,
+                                'URL Producto': url,
+                            }
+                        all_data.append(data)
+                        if image_url:
+                            save_image(image_url, title, pagina_web.lower())
+
+                    except Exception as e:
+                        st.warning(f"Error al procesar {url}: {e}")
+
+                driver.quit()
+
+                if all_data:
+                    df = pd.DataFrame(all_data)
+                    st.write('### Información de los productos')
+                    st.dataframe(df.style.set_properties(**{'text-align': 'left'}).set_table_styles(
+                        [{'selector': 'th', 'props': [('text-align', 'left')]}]
+                    ))
+
+                    file_name = save_to_excel(all_data, pagina_web.lower())
+                    st.success(f"Datos guardados en {file_name}")
+                else:
+                    st.error("No se encontraron productos válidos.")
+            else:
+                st.error("No se encontraron productos para tu búsqueda.")
     else:
         # -------------------- STREAMLIT APP --------------------
         st.title(f"{pagina_web} Producto Scraper")
@@ -62,25 +112,25 @@ def web_scraper():
 
             if product_urls:
                 all_data = []
-                for url in product_urls[:30]:
+                for url in product_urls[:15]:
                     try:
                         info = get_product_info(driver, url, pagina_web.lower())
+                                
                         if isinstance(info, ProductInfo):
-                            title, image_url, price, availability = info.title, info.image_url, info.price, info.availability
+                            title, image_url, price = (info.title, info.image_url, info.price)
 
                         if title:
                             data = {
                                 'Fecha': datetime.now().strftime('%Y-%m-%d'),
                                 'Titulo': title,
                                 'Precio': price,
-                                'Disponibilidad': availability,
                                 'URL Imagen': image_url,
-                                'URL Producto': url
+                                'URL Producto': url,
                             }
-                            all_data.append(data)
+                        all_data.append(data)
+                        if image_url:
+                            save_image(image_url, title, pagina_web.lower())
 
-                            if image_url:
-                                save_image(image_url, title)
                     except Exception as e:
                         st.warning(f"Error al procesar {url}: {e}")
 

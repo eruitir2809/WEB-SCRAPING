@@ -35,7 +35,50 @@ class ProductInfo:
     title: Optional[str]
     image_url: Optional[str]
     price: str
-    availability: Optional[str]
+    
+class ResultInfo:
+    Equipo1: Optional[str]
+    Resultado1: Optional[str]
+    Equipo2: str
+    Resultado2: Optional[str]
+
+
+def scrape_website(url: str) -> str:
+    """Carga la página con Selenium y devuelve el HTML completo."""
+    driver = create_driver()
+    try:
+        driver.get(url)
+        html = driver.page_source
+    finally:
+        driver.quit()
+    return html
+
+def extract_body_content(html: str) -> str:
+    """Extrae el contenido del <body> usando BeautifulSoup."""
+    soup = BeautifulSoup(html, "html.parser")
+    body = soup.find("body")
+    return body.get_text(separator="\n", strip=True) if body else ""
+
+def clean_body_content(text: str) -> str:
+    """Limpia texto eliminando líneas vacías y espacios."""
+    lines = text.splitlines()
+    cleaned_lines = [line.strip() for line in lines if line.strip()]
+    return "\n".join(cleaned_lines)
+
+def split_dom_content(content: str, max_len: int = 500) -> list:
+    """Divide el contenido en fragmentos manejables."""
+    paragraphs = content.split("\n")
+    chunks = []
+    current = ""
+    for para in paragraphs:
+        if len(current) + len(para) < max_len:
+            current += para + "\n"
+        else:
+            chunks.append(current.strip())
+            current = para + "\n"
+    if current:
+        chunks.append(current.strip())
+    return chunks
 
 def safe_get(driver, wait, by, value) -> Optional[str]:
     try:
@@ -61,7 +104,6 @@ def get_product_info_amazon(driver, url: str) -> ProductInfo:
 
     title = safe_get(driver, wait, By.ID, "productTitle")
     price = extract_price(driver, ["a-price-whole", "a-price", "a-offscreen"])
-    availability = safe_get(driver, wait, By.ID, "availability")
 
     try:
         image_element = wait.until(EC.presence_of_element_located((By.ID, "landingImage")))
@@ -69,7 +111,7 @@ def get_product_info_amazon(driver, url: str) -> ProductInfo:
     except TimeoutException:
         image_url = None
 
-    return ProductInfo(title, image_url, price, availability)
+    return ProductInfo(title, image_url, price)
 
 def get_product_info_ikea(driver, url: str) -> ProductInfo:
     driver.get(url)
@@ -77,54 +119,54 @@ def get_product_info_ikea(driver, url: str) -> ProductInfo:
 
     title = safe_get(driver, wait, By.CLASS_NAME, "pip-header-section__title--big")
     price = extract_price(driver, ["pip-price__integer", "pip-price__separator", "pip-price__decimal"])
-    availability = safe_get(driver, wait, By.CLASS_NAME, "pip-status__label")
 
     try:
         image_element = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "pip-image")))
         image_url = image_element.get_attribute("src")
     except TimeoutException:
         image_url = None
-    return ProductInfo(title, image_url, price, availability)
+    return ProductInfo(title, image_url, price)
 
-def get_product_info_vinted(driver, url):
+def get_info_marca(driver, url: str) -> ProductInfo:
     driver.get(url)
     wait = WebDriverWait(driver, 5)
 
-    title = safe_get(driver, wait, By.ID, "productTitle")
-    price = extract_price(driver, ["a-price-whole", "a-price", "a-offscreen"])
-    availability = safe_get(driver, wait, By.ID, "availability")
+    title = safe_get(driver, wait, By.CLASS_NAME, "item-detail_ItemDetail__title__wcPRl")
+    price = extract_price(driver, ["item-detail-price_ItemDetailPrice--standard__TxPXr"])
 
     try:
-        image_element = wait.until(EC.presence_of_element_located((By.ID, "landingImage")))
+        image_element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//img[contains(@alt, 'carousel')]"))
+        )
         image_url = image_element.get_attribute("src")
     except TimeoutException:
         image_url = None
+    return ProductInfo(title, image_url, price)
 
-    return ProductInfo(title, image_url, price, availability)
 
-def get_product_info_wallapop(driver, url):
+def get_product_info_wallapop(driver, url: str) -> ProductInfo:
     driver.get(url)
     wait = WebDriverWait(driver, 5)
 
-    title = safe_get(driver, wait, By.ID, "productTitle")
-    price = extract_price(driver, ["a-price-whole", "a-price", "a-offscreen"])
-    availability = safe_get(driver, wait, By.ID, "availability")
+    title = safe_get(driver, wait, By.CLASS_NAME, "item-detail_ItemDetail__title__wcPRl")
+    price = extract_price(driver, ["item-detail-price_ItemDetailPrice--standard__TxPXr"])
 
     try:
-        image_element = wait.until(EC.presence_of_element_located((By.ID, "landingImage")))
+        image_element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//img[contains(@alt, 'carousel')]"))
+        )
         image_url = image_element.get_attribute("src")
     except TimeoutException:
         image_url = None
-
-    return ProductInfo(title, image_url, price, availability)
+    return ProductInfo(title, image_url, price)
     
 def get_product_info(driver, url, site):
     if site == "amazon":
         return get_product_info_amazon(driver, url)
     elif site == "ikea":
         return get_product_info_ikea(driver, url)
-    elif site == "vinted":
-        return get_product_info_vinted(driver, url)
+    elif site == "marca":
+        return get_info_marca(driver, url)
     elif site == "wallapop":
         return get_product_info_wallapop(driver, url)
     else:
@@ -135,7 +177,7 @@ def get_search_results(pagina_web, driver, query):
     urls = {
         "amazon": f"https://www.amazon.es/s?k={query}",
         "ikea": f"https://www.ikea.com/es/es/search/?q={query}",
-        "vinted": f"https://www.vinted.es/catalog?search_text={query}",
+        "marca": f"https://www.marca.com/resultados.html?intcmp=MODCARR01&s_kw=superior&date={query}",
         "wallapop": f"https://es.wallapop.com/search?source=search_box&keywords={query}",
     }
 
@@ -158,27 +200,23 @@ def get_search_results(pagina_web, driver, query):
         elements = driver.find_elements(By.CLASS_NAME, 'plp-product__image-link')
         links = [el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href")]
         
-        print(f"Buscando en IKEA con URL: {url}")
-        print(f"Se encontraron {len(links)} productos")
-
-
-    elif pagina_web == "vinted":
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href^="/items/"]')))
-        elements = driver.find_elements(By.CSS_SELECTOR, 'a[href^="/items/"]')
-        links = ["https://www.vinted.es" + el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href")]
+    elif pagina_web == "marca":
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'plp-fragment-wrapper')))
+        elements = driver.find_elements(By.CLASS_NAME, 'plp-product__image-link')
+        links = [el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href")]
 
     elif pagina_web == "wallapop":
         # Ya abriste driver.get arriba con URL corregida
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href*="/item/"]')))
-        elements = driver.find_elements(By.CSS_SELECTOR, 'a[href*="/item/"]')
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'item-card_ItemCard--vertical__FiFz6')))
+        elements = driver.find_elements(By.CLASS_NAME, 'item-card_ItemCard--vertical__FiFz6')
         links = [el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href")]
 
-    return list(set(links))  # quitar duplicados
+    return list(set(links))
 
 
 # -------------------- SAVE IMAGE --------------------
-def save_image(image_url, product_name):
-    folder = "imagenes"
+def save_image(image_url, product_name, pagina_web):
+    folder = f"resultados/imagenes/{pagina_web}"
     os.makedirs(folder, exist_ok=True)
 
     valid_filename = re.sub(r'[<>:"/\\|?*]', "", product_name)[:10]
@@ -200,8 +238,11 @@ def save_image(image_url, product_name):
 
 # -------------------- SAVE TO EXCEL --------------------
 def save_to_excel(data, pagina_web):
+    folder = f"resultados/excels/{pagina_web}"
+    os.makedirs(folder, exist_ok=True)
+    
     df = pd.DataFrame(data)
-    file_name = f"busquedas_{pagina_web}.xlsx"
+    file_name = f"resultados/excels/{pagina_web}/busquedas_{pagina_web}.xlsx"
 
     if os.path.exists(file_name):
         existing_df = pd.read_excel(file_name)
