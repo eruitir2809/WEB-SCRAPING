@@ -52,7 +52,7 @@ def cargar_excel():
                     file_name=nuevo_nombre,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
-                
+       
         st.session_state.excel_content = df_editado
 
 
@@ -65,7 +65,7 @@ def cargar_excel():
                 st.info("Dividiendo contenido en bloques para el modelo...")
 
                 try:
-                    
+  
                     result = parse_with_ollama([st.session_state.excel_content], parse_description)
                     st.subheader("Resultado del Modelo")
                     st.write(eliminar_pensamientos(result))

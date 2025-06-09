@@ -1,5 +1,4 @@
 import streamlit as st
-from PIL import Image
 from scraping.scrapeAmazon import (
     scrape_website,
     create_driver,
@@ -51,7 +50,7 @@ def web_scraper():
                     
     elif pagina_web == 'Marca':
         # -------------------- STREAMLIT APP --------------------
-        st.title(f"Consultar resultado de Marca")
+        st.title("Consultar resultado Marca")
 
         search_query = st.text_input(f"Introduce tu la fecha que quieras consultar de {pagina_web}, en este formato Día-Mes-Año:")
 
@@ -115,7 +114,7 @@ def web_scraper():
                 for url in product_urls[:15]:
                     try:
                         info = get_product_info(driver, url, pagina_web.lower())
-                                
+         
                         if isinstance(info, ProductInfo):
                             title, image_url, price = (info.title, info.image_url, info.price)
 

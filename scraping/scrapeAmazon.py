@@ -1,10 +1,7 @@
 import os
 import re
-import json
 import pandas as pd
 import requests
-import streamlit as st
-from datetime import datetime
 from bs4 import BeautifulSoup
 
 from selenium import webdriver
@@ -37,10 +34,11 @@ class ProductInfo:
     price: str
     
 class ResultInfo:
-    Equipo1: Optional[str]
-    Resultado1: Optional[str]
-    Equipo2: str
-    Resultado2: Optional[str]
+    deporte: str
+    equipo1: Optional[str]
+    resultado1: Optional[str]
+    equipo2: Optional[str]
+    resultado2: Optional[str]
 
 
 def scrape_website(url: str) -> str:
@@ -65,7 +63,7 @@ def clean_body_content(text: str) -> str:
     cleaned_lines = [line.strip() for line in lines if line.strip()]
     return "\n".join(cleaned_lines)
 
-def split_dom_content(content: str, max_len: int = 500) -> list:
+def split_dom_content(content: str, max_len: int = 1000) -> list:
     """Divide el contenido en fragmentos manejables."""
     paragraphs = content.split("\n")
     chunks = []
@@ -80,7 +78,7 @@ def split_dom_content(content: str, max_len: int = 500) -> list:
         chunks.append(current.strip())
     return chunks
 
-def safe_get(driver, wait, by, value) -> Optional[str]:
+def safe_get(wait, by, value) -> Optional[str]:
     try:
         element = wait.until(EC.presence_of_element_located((by, value)))
         return element.text.strip()
@@ -127,21 +125,24 @@ def get_product_info_ikea(driver, url: str) -> ProductInfo:
         image_url = None
     return ProductInfo(title, image_url, price)
 
-def get_info_marca(driver, url: str) -> ProductInfo:
+def get_info_marca(driver, url: str) -> ResultInfo:
     driver.get(url)
     wait = WebDriverWait(driver, 5)
 
-    title = safe_get(driver, wait, By.CLASS_NAME, "item-detail_ItemDetail__title__wcPRl")
-    price = extract_price(driver, ["item-detail-price_ItemDetailPrice--standard__TxPXr"])
+    # Descargar toda la página
+    html = driver.page_source
+    with open("marca_resultado_completo.html", "w", encoding="utf-8") as f:
+        f.write(html)
 
-    try:
-        image_element = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//img[contains(@alt, 'carousel')]"))
-        )
-        image_url = image_element.get_attribute("src")
-    except TimeoutException:
-        image_url = None
-    return ProductInfo(title, image_url, price)
+    # Extraer datos estructurados como antes
+    deporte = safe_get(driver, wait, By.CLASS_NAME, "ue-schedule__sport-title")
+    equipo1 = safe_get(driver, wait, By.CLASS_NAME, "ue-c-scoreboard-dual__team-name")
+    resultado1 = safe_get(driver, wait, By.CLASS_NAME, "ue-c-scoreboard-dual__score")
+    equipo2 = safe_get(driver, wait, By.CLASS_NAME, "ue-c-scoreboard-dual__team-name")
+    resultado2 = safe_get(driver, wait, By.CLASS_NAME, "ue-c-scoreboard-dual__score")
+
+    return ResultInfo(deporte, equipo1, resultado1, equipo2, resultado2)
+
 
 
 def get_product_info_wallapop(driver, url: str) -> ProductInfo:
@@ -163,14 +164,17 @@ def get_product_info_wallapop(driver, url: str) -> ProductInfo:
 def get_product_info(driver, url, site):
     if site == "amazon":
         return get_product_info_amazon(driver, url)
-    elif site == "ikea":
+    
+    if site == "ikea":
         return get_product_info_ikea(driver, url)
-    elif site == "marca":
+    
+    if site == "marca":
         return get_info_marca(driver, url)
-    elif site == "wallapop":
+    
+    if site == "wallapop":
         return get_product_info_wallapop(driver, url)
-    else:
-        return "Sitio no soportado"
+    
+    return "Sitio no soportado"
 
 # -------------------- GET SEARCH RESULTS --------------------
 def get_search_results(pagina_web, driver, query):
@@ -201,7 +205,7 @@ def get_search_results(pagina_web, driver, query):
         links = [el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href")]
         
     elif pagina_web == "marca":
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'plp-fragment-wrapper')))
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'ue-schedule-date-carousel')))
         elements = driver.find_elements(By.CLASS_NAME, 'plp-product__image-link')
         links = [el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href")]
 
