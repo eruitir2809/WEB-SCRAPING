@@ -32,13 +32,7 @@ class ProductInfo:
     title: Optional[str]
     image_url: Optional[str]
     price: str
-    
-class ResultInfo:
-    deporte: str
-    equipo1: Optional[str]
-    resultado1: Optional[str]
-    equipo2: Optional[str]
-    resultado2: Optional[str]
+
 
 
 def scrape_website(url: str) -> str:
@@ -78,7 +72,7 @@ def split_dom_content(content: str, max_len: int = 1000) -> list:
         chunks.append(current.strip())
     return chunks
 
-def safe_get(wait, by, value) -> Optional[str]:
+def safe_get(driver, wait, by, value) -> Optional[str]:
     try:
         element = wait.until(EC.presence_of_element_located((by, value)))
         return element.text.strip()
@@ -125,26 +119,6 @@ def get_product_info_ikea(driver, url: str) -> ProductInfo:
         image_url = None
     return ProductInfo(title, image_url, price)
 
-def get_info_marca(driver, url: str) -> ResultInfo:
-    driver.get(url)
-    wait = WebDriverWait(driver, 5)
-
-    # Descargar toda la página
-    html = driver.page_source
-    with open("marca_resultado_completo.html", "w", encoding="utf-8") as f:
-        f.write(html)
-
-    # Extraer datos estructurados como antes
-    deporte = safe_get(driver, wait, By.CLASS_NAME, "ue-schedule__sport-title")
-    equipo1 = safe_get(driver, wait, By.CLASS_NAME, "ue-c-scoreboard-dual__team-name")
-    resultado1 = safe_get(driver, wait, By.CLASS_NAME, "ue-c-scoreboard-dual__score")
-    equipo2 = safe_get(driver, wait, By.CLASS_NAME, "ue-c-scoreboard-dual__team-name")
-    resultado2 = safe_get(driver, wait, By.CLASS_NAME, "ue-c-scoreboard-dual__score")
-
-    return ResultInfo(deporte, equipo1, resultado1, equipo2, resultado2)
-
-
-
 def get_product_info_wallapop(driver, url: str) -> ProductInfo:
     driver.get(url)
     wait = WebDriverWait(driver, 5)
@@ -168,9 +142,6 @@ def get_product_info(driver, url, site):
     if site == "ikea":
         return get_product_info_ikea(driver, url)
     
-    if site == "marca":
-        return get_info_marca(driver, url)
-    
     if site == "wallapop":
         return get_product_info_wallapop(driver, url)
     
@@ -181,7 +152,6 @@ def get_search_results(pagina_web, driver, query):
     urls = {
         "amazon": f"https://www.amazon.es/s?k={query}",
         "ikea": f"https://www.ikea.com/es/es/search/?q={query}",
-        "marca": f"https://www.marca.com/resultados.html?intcmp=MODCARR01&s_kw=superior&date={query}",
         "wallapop": f"https://es.wallapop.com/search?source=search_box&keywords={query}",
     }
 
@@ -204,11 +174,6 @@ def get_search_results(pagina_web, driver, query):
         elements = driver.find_elements(By.CLASS_NAME, 'plp-product__image-link')
         links = [el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href")]
         
-    elif pagina_web == "marca":
-        wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'ue-schedule-date-carousel')))
-        elements = driver.find_elements(By.CLASS_NAME, 'plp-product__image-link')
-        links = [el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href")]
-
     elif pagina_web == "wallapop":
         # Ya abriste driver.get arriba con URL corregida
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'item-card_ItemCard--vertical__FiFz6')))
