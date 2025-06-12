@@ -59,7 +59,7 @@ WEB-SCRAPING/
 ├── requirements.txt
 ├── model/
 │   └── # Módulos auxiliares para parsear, etc.
-├── output/
+├── resultados/
 │   └── # Archivos generados con los datos extraídos
 ├── scraping/
 │   └── # Funciones adicionales para scrapear
