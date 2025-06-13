@@ -40,5 +40,5 @@ def parse_with_ollama(dom_chunks, parse_description, max_workers=None):
 
     return "\n".join(r for r in parsed_results if r.strip())  # Elimina vacíos
 
-def eliminar_pensamientos(texto):
+def delete_thoughts(texto):
     return re.sub(r"<think>.*?</think>", "", texto, flags=re.DOTALL).strip()

@@ -2,13 +2,13 @@ import streamlit as st
 import time
 from PyPDF2 import PdfReader
 import docx2txt
-from model.parse import parse_with_ollama, eliminar_pensamientos
+from model.parse import parse_with_ollama, delete_thoughts
 
-def cargar_documentos():
+def load_documents():
     st.subheader("Cargar y Leer Documentos")
-    archivo_datos = st.file_uploader("Sube un documento:", type=["pdf", "docx", "txt"])
+    data_file = st.file_uploader("Sube un documento:", type=["pdf", "docx", "txt"])
 
-    def leer_pdf(file):
+    def read_pdf(file):
         try:
             pdf_reader = PdfReader(file)
             return "\n".join(page.extract_text() or "" for page in pdf_reader.pages).strip()
@@ -16,49 +16,49 @@ def cargar_documentos():
             st.error(f"Error al leer PDF: {e}")
             return ""
 
-    def leer_docx(file):
+    def read_docx(file):
         try:
             return docx2txt.process(file)
         except Exception as e:
             st.error(f"Error al leer DOCX: {e}")
             return ""
 
-    def leer_txt(file):
+    def read_txt(file):
         try:
             return file.read().decode("utf-8")
         except Exception as e:
             st.error(f"Error al leer TXT: {e}")
             return ""
 
-    if archivo_datos:
-        texto = ""
-        tipo = archivo_datos.type
+    if data_file:
+        text = ""
+        tipo = data_file.type
 
         if tipo == "application/pdf":
-            texto = leer_pdf(archivo_datos)
+            text = read_pdf(data_file)
         elif tipo == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            texto = leer_docx(archivo_datos)
+            text = read_docx(data_file)
         elif tipo == "text/plain":
-            texto = leer_txt(archivo_datos)
+            text = read_txt(data_file)
         else:
             st.error("Formato de archivo no soportado.")
             return
 
-        if texto:
+        if text:
             st.subheader("Contenido Extraído (Editable)")
-            texto_editado = st.text_area("Texto", value=texto, height=300, key="editor")
+            edited_text = st.text_area("text", value=text, height=300, key="editor")
 
             if st.button("Guardar y Descargar"):
-                tiempo_actual = time.strftime("%Y%m%d-%H%M%S")
-                nuevo_nombre = f"documento_editado_{tiempo_actual}.txt"
+                current_time = time.strftime("%Y%m%d-%H%M%S")
+                new_name = f"documento_editado_{current_time}.txt"
                 st.download_button(
-                    label="📥 Descargar Texto",
-                    data=texto_editado,
-                    file_name=nuevo_nombre,
+                    label="📥 Descargar text",
+                    data=edited_text,
+                    file_name=new_name,
                     mime="text/plain"
                 )
             
-            st.session_state.doc_content = texto_editado
+            st.session_state.doc_content = edited_text
 
         if "doc_content" in st.session_state:
             st.subheader("Extraer Información con Modelo")
@@ -66,13 +66,13 @@ def cargar_documentos():
 
             if st.button("Parsear Contenido"):
                 if parse_description.strip():
-                    st.info("Procesando texto con el modelo...")
+                    st.info("Procesando text con el modelo...")
 
                     try:
                         resultado = parse_with_ollama([st.session_state.doc_content], parse_description)
                         st.info
                         st.subheader("Resultado del Modelo")
-                        st.write(eliminar_pensamientos(resultado))
+                        st.write(delete_thoughts(resultado))
 
                     except Exception as e:
                         st.error(f"Error al ejecutar el modelo: {e}")

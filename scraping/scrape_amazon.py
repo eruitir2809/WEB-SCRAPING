@@ -148,33 +148,33 @@ def get_product_info(driver, url, site):
     return "Sitio no soportado"
 
 # -------------------- GET SEARCH RESULTS --------------------
-def get_search_results(pagina_web, driver, query):
+def get_search_results(web_page, driver, query):
     urls = {
         "amazon": f"https://www.amazon.es/s?k={query}",
         "ikea": f"https://www.ikea.com/es/es/search/?q={query}",
         "wallapop": f"https://es.wallapop.com/search?source=search_box&keywords={query}",
     }
 
-    if pagina_web not in urls:
-        raise ValueError(f"No se reconoce la página web: {pagina_web}")
+    if web_page not in urls:
+        raise ValueError(f"No se reconoce la página web: {web_page}")
 
-    url = urls[pagina_web]
+    url = urls[web_page]
     driver.get(url)
     wait = WebDriverWait(driver, 10)
 
     links = []
 
-    if pagina_web == "amazon":
+    if web_page == "amazon":
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, "s-result-item")))
         elements = driver.find_elements(By.CSS_SELECTOR, "a.a-link-normal.s-no-outline")
         links = [el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href") and "/dp/" in el.get_attribute("href")]
 
-    elif pagina_web == "ikea":
+    elif web_page == "ikea":
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'plp-fragment-wrapper')))
         elements = driver.find_elements(By.CLASS_NAME, 'plp-product__image-link')
         links = [el.get_attribute("href").split("?")[0] for el in elements if el.get_attribute("href")]
         
-    elif pagina_web == "wallapop":
+    elif web_page == "wallapop":
         # Ya abriste driver.get arriba con URL corregida
         wait.until(EC.presence_of_element_located((By.CLASS_NAME, 'item-card_ItemCard--vertical__FiFz6')))
         elements = driver.find_elements(By.CLASS_NAME, 'item-card_ItemCard--vertical__FiFz6')
@@ -184,8 +184,8 @@ def get_search_results(pagina_web, driver, query):
 
 
 # -------------------- SAVE IMAGE --------------------
-def save_image(image_url, product_name, pagina_web):
-    folder = f"resultados/imagenes/{pagina_web}"
+def save_image(image_url, product_name, web_page):
+    folder = f"resultados/imagenes/{web_page}"
     os.makedirs(folder, exist_ok=True)
 
     valid_filename = re.sub(r'[<>:"/\\|?*]', "", product_name)[:10]
@@ -206,12 +206,12 @@ def save_image(image_url, product_name, pagina_web):
     return None
 
 # -------------------- SAVE TO EXCEL --------------------
-def save_to_excel(data, pagina_web):
-    folder = f"resultados/excels/{pagina_web}"
+def save_to_excel(data, web_page):
+    folder = f"resultados/excels/{web_page}"
     os.makedirs(folder, exist_ok=True)
     
     df = pd.DataFrame(data)
-    file_name = f"resultados/excels/{pagina_web}/busquedas_{pagina_web}.xlsx"
+    file_name = f"resultados/excels/{web_page}/busquedas_{web_page}.xlsx"
 
     if os.path.exists(file_name):
         existing_df = pd.read_excel(file_name)

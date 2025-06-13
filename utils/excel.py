@@ -2,21 +2,21 @@ import streamlit as st
 import pandas as pd
 import time
 import io
-from model.parse import parse_with_ollama, eliminar_pensamientos
+from model.parse import parse_with_ollama, delete_thoughts
 
-def cargar_excel():
+def load_excel():
     st.subheader("Cargar archivo CSV o Excel")
-    archivo_datos = st.file_uploader("Sube tu archivo:", type=["csv", "xlsx"])
+    uploaded_file = st.file_uploader("Sube tu archivo:", type=["csv", "xlsx"])
 
-    if archivo_datos:
-        filename = archivo_datos.name
+    if uploaded_file:
+        filename = uploaded_file.name
         file_extension = filename.split(".")[-1].lower()
 
         try:
             if file_extension == "csv":
-                df = pd.read_csv(archivo_datos)
+                df = pd.read_csv(uploaded_file)
             elif file_extension == "xlsx":
-                df = pd.read_excel(archivo_datos)
+                df = pd.read_excel(uploaded_file)
             else:
                 st.error("Formato de archivo no soportado.")
                 return
@@ -25,35 +25,35 @@ def cargar_excel():
             return
 
         st.subheader("Editar Datos")
-        df_editado = st.data_editor(df, num_rows="dynamic")
+        edited_df = st.data_editor(df, num_rows="dynamic")
 
         if st.button("Guardar y Descargar"):
-            tiempo_actual = time.strftime("%Y%m%d-%H%M%S")
-            base_nombre = filename.rsplit(".", 1)[0]
+            current_time = time.strftime("%Y%m%d-%H%M%S")
+            base_name = filename.rsplit(".", 1)[0]
 
             if file_extension == "csv":
-                nuevo_nombre = f"{base_nombre}_{tiempo_actual}.csv"
-                csv_data = df_editado.to_csv(index=False, encoding="utf-8")
+                new_file_name= f"{base_name}_{current_time}.csv"
+                csv_data = edited_df.to_csv(index=False, encoding="utf-8")
                 st.download_button(
                     label="📥 Descargar CSV",
                     data=csv_data,
-                    file_name=nuevo_nombre,
+                    file_name=new_file_name,
                     mime="text/csv"
                 )
 
             elif file_extension == "xlsx":
-                nuevo_nombre = f"{base_nombre}_{tiempo_actual}.xlsx"
+                new_file_name= f"{base_name}_{current_time}.xlsx"
                 output = io.BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df_editado.to_excel(writer, index=False, sheet_name='Datos')
+                    edited_df.to_excel(writer, index=False, sheet_name='Datos')
                 st.download_button(
                     label="📥 Descargar Excel",
                     data=output.getvalue(),
-                    file_name=nuevo_nombre,
+                    file_name=new_file_name,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
        
-        st.session_state.excel_content = df_editado
+        st.session_state.excel_content = edited_df
 
 
     if "excel_content" in st.session_state:
@@ -68,7 +68,7 @@ def cargar_excel():
   
                     result = parse_with_ollama([st.session_state.excel_content], parse_description)
                     st.subheader("Resultado del Modelo")
-                    st.write(eliminar_pensamientos(result))
+                    st.write(delete_thoughts(result))
 
                 except Exception as e:
                     st.error(f"Error al ejecutar el modelo: {e}")
