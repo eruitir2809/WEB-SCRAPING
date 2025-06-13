@@ -39,8 +39,8 @@ def read_products(cursor):
 def close_conexion(conex):
     conex.close()
     
-def load_dats_sql():
-    st.title("📂 Productos almacenados en la base de datos")
+def load_datos_sql():
+    st.subheader("📂 Productos almacenados en la base de datos")
     conex = create_database()
     cursor = create_cursor(conex)
 
@@ -49,7 +49,7 @@ def load_dats_sql():
         rows = cursor.fetchall()
         
         if rows:
-            df = pd.DataFrame(rows, columns=["Pagina Web", "Fecha", "Titulo", "Precio", "URL Imagen", "URL Producto"])
+            df = pd.DataFrame(rows, columns=["Pagina Web", "URL Producto", "Fecha", "Titulo", "Precio", "URL Imagen"])
 
             styled_df = df.style.set_properties(**{'text-align': 'left'}).set_table_styles([
                 {'selector': 'th', 'props': [('text-align', 'left')]}

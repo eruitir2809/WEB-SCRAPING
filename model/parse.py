@@ -13,8 +13,6 @@ template = (
     "1. **Extraer Información:** Responde únicamente la información que coincida directamente con la descripción.\n"
     "2. **SIN CONTENIDO ADICIONAL:** No incluyas ningún texto adicional, comentarios ni explicaciones en tu respuesta, no incluyas nada que se encuentre entre <think> y </think>."
     "3. Prohibido el razonamiento: No incluyas pensamientos, razonamientos ni explicaciones internas, aunque creas que ayudan a justificar la respuesta."
-    "4. SI NO HAY COINCIDENCIAS: Responde únicamente con 'NO HAY INFORMACIÓN RELEVANTE'."
-
 )
 
 model = OllamaLLM(model="DeepSeek-R1:14b")
@@ -38,7 +36,7 @@ def parse_with_ollama(dom_chunks, parse_description, max_workers=None):
         ]
         parsed_results = [f.result() for f in futures]
 
-    return "\n".join(r for r in parsed_results if r.strip())  # Elimina vacíos
+    return "\n".join(r for r in parsed_results if r.strip())
 
 def delete_thoughts(texto):
     return re.sub(r"<think>.*?</think>", "", texto, flags=re.DOTALL).strip()

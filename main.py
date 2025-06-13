@@ -16,11 +16,11 @@ img = Image.open('assets/logo.png')
 st.set_page_config(page_title='Proyecto TFG', page_icon=img)
 
 def main():
-    st.title("AI Web Scraper")
-    menu = ["AI Web Scraper", "Leer Documentos", "Leer Excel", "Ver Base de Datos"]
+    st.title("Web Scraper")
+    menu = ["Web Scraper", "Leer Documentos", "Leer Excel", "Ver Base de Datos"]
     choice = st.sidebar.selectbox("Menú", menu)
 
-    if choice == "AI Web Scraper":
+    if choice == "Web Scraper":
         web_scraper()
                     
     elif choice == "Leer Documentos":

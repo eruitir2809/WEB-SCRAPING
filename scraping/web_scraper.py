@@ -99,7 +99,7 @@ def web_scraper():
 
             if all_data:
                 df = pd.DataFrame(all_data)
-                st.session_state.product_df = df  # Guardar en sesión
+                st.session_state.product_df = df
 
                 if "product_df" in st.session_state:
                     df = st.session_state.product_df
@@ -127,20 +127,19 @@ def web_scraper():
                                     st.markdown(f"💰 **Precio:** {row['Precio']}")
                                     st.markdown(f"🔗 [Ver producto]({row['URL Producto']})")
                             st.markdown("---")
-
-                    if st.button("Descargar"):
-                        excel_name = f"{search_query}.xlsx"
-                        output = io.BytesIO()
-
-                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                            df.to_excel(writer, index=False, sheet_name='Datos')
-
-                        st.download_button(
-                            label="📥 Descargar Excel",
-                            data=output.getvalue(),
-                            file_name=excel_name,
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        )
+                        
+                excel_name = f"{search_query}.xlsx"
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                    df.to_excel(writer, index=False, sheet_name='Datos')
+                output.seek(0) 
+                
+                st.download_button(
+                    label="📥 Descargar Excel",
+                    data=output,
+                    file_name=excel_name,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
             else:
                 st.error("⚠️ No se encontraron productos válidos.")
                 
