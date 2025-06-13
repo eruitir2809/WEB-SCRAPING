@@ -46,7 +46,7 @@ Este proyecto consiste en la realización de un scraper web desarrollado en Pyth
 1. Configura los parámetros de scraping en el archivo de configuración o en el script principal.
 2. Ejecuta el scraper:
    ```bash
-   python main.py
+   streamlit run main.py
    ```
 3. Los datos extraídos estarán disponibles en la carpeta de salida especificada (por ejemplo, `output/`).
 
@@ -59,6 +59,8 @@ WEB-SCRAPING/
 ├── requirements.txt
 ├── model/
 │   └── # Módulos auxiliares para parsear, etc.
+├── data/
+│   └── # Base de Datos
 ├── resultados/
 │   └── # Archivos generados con los datos extraídos
 ├── scraping/
